@@ -1,0 +1,12 @@
+Django==4.1.13
+djangorestframework==3.14.0
+psycopg2==2.9.9
+djangorestframework==3.14.0
+django_extensions==3.2.3
+notebook==6.5.6
+ipython
+django_filter
+
+
+celery
+redis
