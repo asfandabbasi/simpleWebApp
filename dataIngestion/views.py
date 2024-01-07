@@ -3,6 +3,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from rest_framework import permissions
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import JsonResponse
 
 from .serializers import InvoiceSerializer, UploadSerializer
 from .models import Invoice
@@ -13,6 +14,7 @@ from rest_framework.decorators import action
 
 from datetime import datetime
 import os
+import pandas as pd
 
 
 # ViewSets define the view behavior.
@@ -26,12 +28,32 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     filterset_fields = ["uuid", "date", "invoice_number", "value", "haircut_percent", "daily_fee_percent", "currency",
                         "revenue_source", "customer", "expected_payment_duration"]
 
-    @action(methods=["get"], detail=True, url_name="get-advance", url_path="get-advance")
+    @action(methods=["get"], detail=False, url_name="get-advance", url_path="get-advance")
     def get_advance(self, request, *args, **kwargs):
         revenue_source = request.data.get('revenue_source')
         invoices = Invoice.objects.using('company').filter(
             revenue_source=revenue_source) if revenue_source else Invoice.objects.using('company').all()
-        return invoices
+        df = pd.DataFrame(list(invoices.values()))
+        # Make sure all types are float. Not Decimal from DB.
+        df['value'] = df['value'].astype(float)
+        df['haircut_percent'] = df['haircut_percent'].astype(float)
+        df['daily_fee_percent'] = df['daily_fee_percent'].astype(float)
+
+        # What is the value after haircut
+        df['value_after_haircut'] = df['value'] * (1 - df['haircut_percent'] * 0.01)
+        # Value of advance after deducting daily fee.
+        df['advance'] = df['value_after_haircut'] * (
+                1 - df['daily_fee_percent'] * df['expected_payment_duration'] * 0.01)
+        df['value_after_daily_fee'] = df['value'] - df['advance']
+        df = df.groupby('revenue_source').agg(
+            {
+                "value": "sum",
+                "value_after_haircut": "sum",
+                "value_after_daily_fee": "sum",
+                "advance": "sum",
+            }
+        ).reset_index()
+        return JsonResponse(df.to_dict())
 
 
 # ViewSets define the view behavior.

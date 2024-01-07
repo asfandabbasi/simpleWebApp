@@ -10,3 +10,4 @@ django_filter
 
 celery
 redis
+pandas

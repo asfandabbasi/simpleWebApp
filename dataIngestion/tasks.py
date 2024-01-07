@@ -14,7 +14,7 @@ def task_save2db(file_name) -> Tuple[int, str]:
     batch_size = 5000
     with open(f"{file_name}", 'r') as f:
         csv_file = csv.DictReader(f, quotechar='"', delimiter=',')
-        csv_file.fieldnames = [name.replace(' ', '_').lower() for name in csv_file.fieldnames]
+        csv_file.fieldnames = [name.strip().replace(' ', '_').lower() for name in csv_file.fieldnames]
         nrows = 0
         rows = []
         for row in csv_file:
