@@ -59,9 +59,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 "advance": "sum",
             }
         ).reset_index()
-        data = zip(df.to_dict(orient='list').values())
 
-        return render(request, 'visualization.html', {"data": data})
+        return render(request, 'visualization.html', {"data": df.values})
 
 
 # ViewSets define the view behavior.
