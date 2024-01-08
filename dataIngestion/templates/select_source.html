@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Get Advance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        select {
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Select Revenue Source</h2>
+    <form id="advanceForm" action="http://localhost:8000/data-ingestion/invoices/get-advance" method="GET">
+        <select name="revenueSource" id="revenueSource" required>
+            <option value="">Select Revenue Source</option>
+            {% for source in revenueSources %}
+            <option value="{{ source }}">{{ source }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <button type="button" onclick="getAdvance()">Get Advance</button>
+    </form>
+</div>
+
+<script>
+    function getAdvance() {
+        var selectedSource = document.getElementById("revenueSource").value;
+
+        if (selectedSource) {
+            var form = document.getElementById("advanceForm");
+            var revenue_source = selectedSource;
+            var payloadInput = document.createElement("input");
+
+            payloadInput.setAttribute("type", "hidden");
+            payloadInput.setAttribute("name", "revenue_source");
+            payloadInput.setAttribute("value", revenue_source);
+
+            form.appendChild(payloadInput);
+            form.submit();
+        } else {
+            alert("Please select a revenue source");
+        }
+    }
+</script>
+</body>
+</html>

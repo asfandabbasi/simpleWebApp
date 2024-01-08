@@ -1,9 +1,9 @@
 from rest_framework import viewsets
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.response import Response
 from rest_framework import permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.generic import TemplateView
 
 from .serializers import InvoiceSerializer, UploadSerializer
 from .models import Invoice
@@ -28,9 +28,15 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     filterset_fields = ["uuid", "date", "invoice_number", "value", "haircut_percent", "daily_fee_percent", "currency",
                         "revenue_source", "customer", "expected_payment_duration"]
 
+    @action(methods=["get"], detail=False, url_name="get-sources", url_path="get-sources")
+    def get_sources(self, request, *args, **kwargs):
+        sources = Invoice.objects.using('company').order_by().values_list('revenue_source').distinct()
+        source_list = [source[0] for source in sources]  # Extracting the string from each tuple
+        return render(request, 'select_source.html', {'revenueSources': source_list})
+
     @action(methods=["get"], detail=False, url_name="get-advance", url_path="get-advance")
     def get_advance(self, request, *args, **kwargs):
-        revenue_source = request.data.get('revenue_source')
+        revenue_source = request.query_params.get('revenue_source')
         invoices = Invoice.objects.using('company').filter(
             revenue_source=revenue_source) if revenue_source else Invoice.objects.using('company').all()
         df = pd.DataFrame(list(invoices.values()))
@@ -53,7 +59,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 "advance": "sum",
             }
         ).reset_index()
-        return JsonResponse(df.to_dict())
+        data = zip(df.to_dict(orient='list').values())
+
+        return render(request, 'visualization.html', {"data": data})
 
 
 # ViewSets define the view behavior.
@@ -62,10 +70,10 @@ class UploadViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):
-        return Response("GET API")
+        return render(request, 'upload_file.html')
 
     def create(self, request):
-        file_uploaded = request.data['upload_file']
+        file_uploaded = request.data['file']
         data = file_uploaded.read().decode('utf-8')
 
         file_path = f"{os.getcwd()}/tmp/{datetime.now().timestamp()}.csv"
@@ -74,4 +82,8 @@ class UploadViewSet(viewsets.ViewSet):
             file.write(data)
 
         celery_app.send_task('task_save2db', kwargs={"file_name": file_path}, queue="default")
-        return Response(f"POST API and you have uploaded a csv file")
+        return render(request, 'upload_success.html')
+
+
+class BaseTemplateView(TemplateView):
+    template_name = 'base.html'  # Specify the template name
