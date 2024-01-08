@@ -50,7 +50,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         # Value of advance after deducting daily fee.
         df['advance'] = df['value_after_haircut'] * (
                 1 - df['daily_fee_percent'] * df['expected_payment_duration'] * 0.01)
-        df['value_after_daily_fee'] = df['value'] - df['advance']
+        df['value_after_daily_fee'] = df['advance']
         df = df.groupby('revenue_source').agg(
             {
                 "value": "sum",

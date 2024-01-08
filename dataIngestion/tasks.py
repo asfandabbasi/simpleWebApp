@@ -18,6 +18,7 @@ def task_save2db(file_name) -> Tuple[int, str]:
         nrows = 0
         rows = []
         for row in csv_file:
+            row['revenue_source'] = row['revenue_source'].strip()
             rows.append(Invoice(**row))
             nrows += 1
             if nrows == batch_size:
